@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Personas</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    /* Misma configuración de estilos que el ejemplo anterior */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .hidden {
+      display: none;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    input, select, textarea, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Pantalla de Login -->
+    <div id="login-screen">
+      <h1>Acceso</h1>
+      <form id="login-form">
+        <label for="access-code">Código de acceso:</label>
+        <input type="password" id="access-code" placeholder="Introduce tu código" required>
+        <button type="submit">Entrar</button>
+      </form>
+    </div>
+
+    <!-- Pantalla de aplicación -->
+    <div id="app-screen" class="hidden">
+      <h1>Gestión de Personas</h1>
+      <nav>
+        <button id="form-tab">Formulario</button>
+        <button id="list-tab">Lista</button>
+      </nav>
+
+      <!-- Formulario -->
+      <div id="form-section" class="hidden">
+        <h2>Formulario de Persona</h2>
+        <form id="person-form">
+          <input type="hidden" id="record-id">
+          <label for="name">Nombre:</label>
+          <input type="text" id="name" required>
+          <label for="surname">Apellidos:</label>
+          <input type="text" id="surname" required>
+          <label for="dni">DNI:</label>
+          <input type="text" id="dni" required>
+          <label for="phone">Teléfono:</label>
+          <input type="tel" id="phone" required>
+          <label for="email">Email:</label>
+          <input type="email" id="email" required>
+          <label for="birthdate">Fecha de Nacimiento:</label>
+          <input type="date" id="birthdate" required>
+          <label for="gender">Género:</label>
+          <select id="gender" required>
+            <option value="male">Masculino</option>
+            <option value="female">Femenino</option>
+            <option value="other">Otro</option>
+          </select>
+          <label for="observations">Observaciones:</label>
+          <textarea id="observations"></textarea>
+          <button type="submit">Guardar</button>
+        </form>
+      </div>
+
+      <!-- Lista -->
+      <div id="list-section" class="hidden">
+        <h2>Lista de Personas</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Apellidos</th>
+              <th>DNI</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="record-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ACCESS_CODE = "1234"; // Código de acceso fijo
+
+    const loginScreen = document.getElementById("login-screen");
+    const appScreen = document.getElementById("app-screen");
+    const formSection = document.getElementById("form-section");
+    const listSection = document.getElementById("list-section");
+
+    const loginForm = document.getElementById("login-form");
+    const personForm = document.getElementById("person-form");
+    const recordList = document.getElementById("record-list");
+
+    const formTab = document.getElementById("form-tab");
+    const listTab = document.getElementById("list-tab");
+
+    // Configuración de Supabase
+    const SUPABASE_URL = "https://nyupwxiznulgxhpyviow.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55dXB3eGl6bnVsZ3hocHl2aW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4Mjg1MjgsImV4cCI6MjA1MzQwNDUyOH0.EUuMRSOsSKE1Gm0GuQwcGaJhR7ke__uSNpZJm5PrqVE";
+    const Client_supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Manejar login
+    loginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const accessCode = document.getElementById("access-code").value;
+      if (accessCode === ACCESS_CODE) {
+        loginScreen.classList.add("hidden");
+        appScreen.classList.remove("hidden");
+      } else {
+        alert("Código incorrecto");
+      }
+    });
+
+    // Alternar entre pestañas
+    formTab.addEventListener("click", () => {
+      formSection.classList.remove("hidden");
+      listSection.classList.add("hidden");
+    });
+
+    listTab.addEventListener("click", async () => {
+      formSection.classList.add("hidden");
+      listSection.classList.remove("hidden");
+      await fetchRecords();
+    });
+
+    // Manejar formulario
+    personForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById("record-id").value;
+      const data = {
+        name: document.getElementById("name").value,
+        surname: document.getElementById("surname").value,
+        dni: document.getElementById("dni").value,
+        phone: document.getElementById("phone").value,
+        email: document.getElementById("email").value,
+        birthdate: document.getElementById("birthdate").value,
+        gender: document.getElementById("gender").value,
+        observations: document.getElementById("observations").value,
+      };
+
+      result = await Client_supabase.from("persons").insert(data);
+  
+
+       if (result.error) {
+            console.error("Error al guardar los datos:", result.error);
+            alert("No se pudo guardar el registro. Revisa la consola para más detalles.");
+        } else {
+            alert("Registro guardado correctamente Estamos en el formulario 1");
+        }
+
+      personForm.reset();
+      document.getElementById("record-id").value = "";
+      formTab.click();
+    });
+
+    // Obtener y listar registros
+    async function fetchRecords() {
+      const { data: records, error } = await Client_supabase.from("persons").select("*");
+      if (error) {
+        alert("Error al obtener registros");
+        return;
+      }
+      console.log(records);
+
+      recordList.innerHTML = records
+        .map(
+          (record) => `
+        <tr>
+          <td>${record.name}</td>
+          <td>${record.surname}</td>
+          <td>${record.dni}</td>
+          <td>
+            <button onclick="editRecord(${record.id})">Editar</button>
+            <button onclick="deleteRecord(${record.id})">Eliminar</button>
+          </td>
+        </tr>
+      `
+        )
+        .join("");
+    }
+
+    // Editar registro
+    window.editRecord = async (id) => {
+      const { data: record, error } = await Client_supabase.from("persons").select("*").eq("id", id).single();
+      if (error) {
+        alert("Error al cargar registro");
+        return;
+      }
+
+      document.getElementById("record-id").value = record.id;
+      document.getElementById("name").value = record.name;
+      document.getElementById("surname").value = record.surname;
+      document.getElementById("dni").value = record.dni;
+      document.getElementById("phone").value = record.phone;
+      document.getElementById("email").value = record.email;
+      document.getElementById("birthdate").value = record.birthdate;
+      document.getElementById("gender").value = record.gender;
+      document.getElementById("observations").value = record.observations;
+
+      formTab.click();
+    };
+
+    // Eliminar registro
+    window.deleteRecord = async (id) => {
+      if (confirm("¿Estás seguro de eliminar este registro?")) {
+        await Client_supabase.from("persons").delete().eq("id", id);
+        alert("Registro eliminado");
+        await fetchRecords();
+      }
+    };
+  </script>
+</body>
+</html>

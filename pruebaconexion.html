@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
+  -->
+</head>
+<body>
+  <script>
+    const SUPABASE_URL = "https://nyupwxiznulgxhpyviow.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55dXB3eGl6bnVsZ3hocHl2aW93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4Mjg1MjgsImV4cCI6MjA1MzQwNDUyOH0.EUuMRSOsSKE1Gm0GuQwcGaJhR7ke__uSNpZJm5PrqVE";
+    //const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55dXB3eGl6bnVsZ3hocHl2aW93Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNzgyODUyOCwiZXhwIjoyMDUzNDA0NTI4fQ.Av-TrNLD1cdkVsKWkLa71bXi0BHw6HBhYxiCmiYXoVs"
+    
+    const Client_supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // Prueba de conexión
+    async function testConnection() {
+      const { data, error } = await Client_supabase.from("persons").select("*");
+      if (error) {
+        console.error("Error al conectar con Supabase:", error);
+      } else {
+        console.log("Datos obtenidos de Supabase:", data);
+      }
+    }
+
+    testConnection();
+   
+  </script>
+</body>
+</html>
